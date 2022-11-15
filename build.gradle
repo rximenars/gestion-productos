@@ -2,7 +2,10 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '2.7.5'
 	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+	id 'jacoco'
 }
+
+apply plugin: 'jacoco'
 
 group = 'co.edu.unisabana'
 version = '0.0.1-SNAPSHOT'
@@ -18,8 +21,29 @@ repositories {
 	mavenCentral()
 }
 
+jacoco {
+    toolVersion = '0.8.8'
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
 ext {
 	set('springCloudVersion', "2021.0.5")
+}
+
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    "**/entity/*",
+                    "**/repository/*"
+            ])
+        }))
+    }
 }
 
 dependencies {
@@ -29,12 +53,22 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
+	compileOnly 'org.projectlombok:lombok:1.18.24'
+	annotationProcessor 'org.projectlombok:lombok:1.18.24'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
- 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testCompileOnly 'org.projectlombok:lombok:1.18.24'
+}
 
+jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			classDirectories.setFrom(jacocoTestReport.getAllClassDirs())
+			limit {
+				minimum = 0.8
+			}
+		}
+	}
 }
 
 dependencyManagement {
